@@ -7,14 +7,18 @@ import time
 import asyncio
 import aiohttp
 import os
-from threading import Thread
+
+print("🚀 Starting PUBG Name Bot...")
 
 # Use environment variable for security
-BOT_TOKEN = os.getenv('BOT_TOKEN', '8172438543:AAG3VNfOrwxPJoQQ6ZGSsXbzOLFenA-r1vk')
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+if not BOT_TOKEN:
+    raise ValueError("❌ BOT_TOKEN environment variable is missing!")
+
 API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
-def get_player_name_fast(player_id):
-    """Your working function here"""
+def get_player_name(player_id):
+    """Get player name from Midasbuy website"""
     options = uc.ChromeOptions()
     options.add_argument('--headless=new')
     options.add_argument('--no-sandbox')
@@ -27,7 +31,7 @@ def get_player_name_fast(player_id):
     
     driver = uc.Chrome(options=options)
     try:
-        print(f"⚡ Searching for: {player_id}")
+        print(f"🔍 Searching for: {player_id}")
         driver.get("https://www.midasbuy.com/midasbuy/us/buy/pubgm")
         time.sleep(2)
         
@@ -43,9 +47,9 @@ def get_player_name_fast(player_id):
             enter_btn = driver.find_element(By.CSS_SELECTOR, "div.UserTabBox_login_text__8GpBN")
             driver.execute_script("arguments[0].click();", enter_btn)
             time.sleep(1)
-        except:
+        except Exception as e:
             driver.quit()
-            return "Error: Could not open search popup"
+            return f"Error: Could not open search - {e}"
         
         # Enter ID
         try:
@@ -56,9 +60,9 @@ def get_player_name_fast(player_id):
             input_field.send_keys(player_id)
             input_field.send_keys(Keys.ENTER)
             time.sleep(2.5)
-        except:
+        except Exception as e:
             driver.quit()
-            return "Error: Could not enter ID"
+            return f"Error: Could not enter ID - {e}"
         
         # Get name
         try:
@@ -66,31 +70,32 @@ def get_player_name_fast(player_id):
                 EC.presence_of_element_located((By.CSS_SELECTOR, "span.UserTabBox_name__4ogGM"))
             )
             player_name = name_element.text.strip()
-            driver.quit()
             return player_name
         except:
-            driver.quit()
             return "Name not found"
         
     except Exception as e:
+        return f"Error: {str(e)}"
+    finally:
         try:
             driver.quit()
         except:
             pass
-        return f"Error: {str(e)}"
 
 async def send_message(chat_id, text):
+    """Send message to Telegram"""
     async with aiohttp.ClientSession() as session:
         payload = {'chat_id': chat_id, 'text': text}
         async with session.post(f"{API_URL}/sendMessage", json=payload) as response:
             return await response.json()
 
 async def handle_updates():
+    """Handle Telegram updates"""
     last_update_id = 0
     async with aiohttp.ClientSession() as session:
         while True:
             try:
-                params = {'offset': last_update_id + 1, 'timeout': 10}
+                params = {'offset': last_update_id + 1, 'timeout': 30}
                 async with session.get(f"{API_URL}/getUpdates", params=params) as response:
                     updates = await response.json()
                 
@@ -103,34 +108,23 @@ async def handle_updates():
                             text = message.get('text', '').strip()
                             
                             if text == '/start':
-                                await send_message(chat_id, "🤖 PUBG Name Bot - Send Player ID")
+                                await send_message(chat_id, "🤖 PUBG Name Bot\n\nSend me a Player ID to get the name!")
                             elif text.isdigit():
-                                await send_message(chat_id, "🔍 Searching...")
+                                search_msg = await send_message(chat_id, "🔍 Searching...")
                                 loop = asyncio.get_event_loop()
-                                player_name = await loop.run_in_executor(None, get_player_name_fast, text)
-                                await send_message(chat_id, f"🎮 {player_name}")
+                                player_name = await loop.run_in_executor(None, get_player_name, text)
+                                await send_message(chat_id, f"🎮 ID: {text}\nName: {player_name}")
                             else:
-                                await send_message(chat_id, "❌ Send only numbers")
+                                await send_message(chat_id, "❌ Please send only numbers (Player ID)")
             
             except Exception as e:
                 print(f"Update error: {e}")
-                await asyncio.sleep(2)
-
-# Keep alive for hosting
-def keep_alive():
-    from flask import Flask
-    app = Flask(__name__)
-    
-    @app.route('/')
-    def home():
-        return "Bot is running!"
-    
-    Thread(target=lambda: app.run(host='0.0.0.0', port=8080)).start()
+                await asyncio.sleep(5)
 
 async def main():
-    print("🚀 Bot Started on Railway!")
+    print("✅ Bot is starting...")
     await handle_updates()
 
 if __name__ == '__main__':
-    keep_alive()
+    print("🚀 Starting bot application...")
     asyncio.run(main())

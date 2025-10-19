@@ -10,7 +10,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 import time
 
-print("🚀 Starting PUBG Name Bot...")
+print("🚀 Starting FAST PUBG Name Bot...")
 
 # Use environment variable for security
 BOT_TOKEN = os.getenv('BOT_TOKEN')
@@ -20,10 +20,10 @@ if not BOT_TOKEN:
 API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 def setup_driver():
-    """Setup Chrome driver for Railway"""
+    """Optimized Chrome driver for cloud speed"""
     chrome_options = Options()
     
-    # Railway-specific options
+    # Performance-optimized options
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
@@ -32,70 +32,102 @@ def setup_driver():
     chrome_options.add_argument('--disable-images')
     chrome_options.add_argument('--blink-settings=imagesEnabled=false')
     chrome_options.add_argument('--window-size=1920,1080')
-    chrome_options.add_argument('--remote-debugging-port=9222')
+    chrome_options.add_argument('--disable-plugins')
+    chrome_options.add_argument('--disable-background-timer-throttling')
+    chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+    chrome_options.add_argument('--disable-renderer-backgrounding')
     
     # Use system Chrome
     chrome_options.binary_location = '/usr/bin/google-chrome'
     
-    # Set ChromeDriver path for Railway
+    # Set ChromeDriver path
     service = Service(executable_path='/usr/bin/chromedriver')
     
     return webdriver.Chrome(service=service, options=chrome_options)
 
 def get_player_name(player_id):
-    """Get player name from Midasbuy website"""
+    """OPTIMIZED for cloud speed - FAST VERSION"""
     driver = setup_driver()
     try:
-        print(f"🔍 Searching for: {player_id}")
+        print(f"🔍 FAST Searching for: {player_id}")
+        
+        # Set shorter timeouts
+        driver.set_page_load_timeout(10)
+        driver.implicitly_wait(5)
+        
+        # Load page with minimal waiting
         driver.get("https://www.midasbuy.com/midasbuy/us/buy/pubgm")
-        time.sleep(3)
+        time.sleep(1)  # Reduced from 3 seconds
         
-        # Close popup
+        # Ultra-fast popup close (single attempt)
+        driver.execute_script("""
+        setTimeout(function() {
+            var closeBtn = document.querySelector('div.PatFacePopWrapper_close-btn__erWAb');
+            if (closeBtn) { 
+                closeBtn.click(); 
+                console.log('Popup closed');
+            }
+        }, 500);
+        """)
+        time.sleep(0.5)  # Reduced wait
+        
+        # Fast search open
+        driver.execute_script("""
+        var searchBtn = document.querySelector('div.UserTabBox_login_text__8GpBN');
+        if (searchBtn) { 
+            searchBtn.click(); 
+            console.log('Search opened');
+        }
+        """)
+        time.sleep(1)  # Reduced from 2 seconds
+        
+        # Fast input and submit
+        input_field = driver.find_element(By.CSS_SELECTOR, "input[placeholder='Enter Player ID']")
+        input_field.clear()
+        input_field.send_keys(player_id)
+        
+        # Submit instantly with JavaScript (faster than ENTER key)
+        driver.execute_script("""
+        var input = document.querySelector('input[placeholder="Enter Player ID"]');
+        var form = input.closest('form');
+        if (form) {
+            form.submit();
+        } else {
+            // Find and click OK button
+            var okBtn = document.querySelector('div.Button_text__WeIeb');
+            if (okBtn) okBtn.click();
+        }
+        """)
+        
+        time.sleep(2)  # Reduced from 3 seconds
+        
+        # Fast name extraction with multiple attempts
+        name = None
+        for attempt in range(3):  # Try 3 times quickly
+            try:
+                name_element = driver.find_element(By.CSS_SELECTOR, "span.UserTabBox_name__4ogGM")
+                name = name_element.text.strip()
+                if name:
+                    print(f"✅ FAST Found: {name}")
+                    return name
+            except:
+                time.sleep(0.5)  # Very short wait between attempts
+        
+        # Fallback: try title attribute
         try:
-            driver.execute_script("document.querySelector('div.PatFacePopWrapper_close-btn__erWAb')?.click();")
-            time.sleep(1)
-            print("✅ Closed popup")
+            container = driver.find_element(By.CSS_SELECTOR, "div.UserTabBox_user_head_text__M0ViN")
+            title_text = container.get_attribute("title")
+            if title_text:
+                name = title_text.split('(')[0].strip()
+                print(f"✅ FAST Found via title: {name}")
+                return name
         except:
-            print("ℹ️ No popup found")
-        
-        # Open search
-        try:
-            enter_btn = driver.find_element(By.CSS_SELECTOR, "div.UserTabBox_login_text__8GpBN")
-            driver.execute_script("arguments[0].click();", enter_btn)
-            time.sleep(2)
-            print("✅ Opened search popup")
-        except Exception as e:
-            driver.quit()
-            return f"Error: Could not open search - {e}"
-        
-        # Enter ID
-        try:
-            input_field = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "input[placeholder='Enter Player ID']"))
-            )
-            input_field.clear()
-            input_field.send_keys(player_id)
-            input_field.send_keys(Keys.ENTER)
-            time.sleep(3)
-            print("✅ Submitted ID")
-        except Exception as e:
-            driver.quit()
-            return f"Error: Could not enter ID - {e}"
-        
-        # Get name
-        try:
-            name_element = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "span.UserTabBox_name__4ogGM"))
-            )
-            player_name = name_element.text.strip()
-            print(f"✅ Found name: {player_name}")
-            return player_name
-        except Exception as e:
-            print(f"❌ Name not found: {e}")
-            return "Name not found"
+            pass
+            
+        return "Name not found"
         
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f"❌ Fast search error: {e}")
         return f"Error: {str(e)}"
     finally:
         try:
@@ -129,9 +161,9 @@ async def handle_updates():
                             text = message.get('text', '').strip()
                             
                             if text == '/start':
-                                await send_message(chat_id, "🤖 PUBG Name Bot\n\nSend me a Player ID to get the name!")
+                                await send_message(chat_id, "🤖 FAST PUBG Name Bot\n\nSend me a Player ID to get the name instantly!")
                             elif text.isdigit():
-                                search_msg = await send_message(chat_id, "🔍 Searching...")
+                                search_msg = await send_message(chat_id, "⚡ FAST Searching...")
                                 loop = asyncio.get_event_loop()
                                 player_name = await loop.run_in_executor(None, get_player_name, text)
                                 await send_message(chat_id, f"🎮 ID: {text}\nName: {player_name}")
@@ -143,9 +175,9 @@ async def handle_updates():
                 await asyncio.sleep(5)
 
 async def main():
-    print("✅ Bot is starting...")
+    print("✅ FAST Bot is starting...")
     await handle_updates()
 
 if __name__ == '__main__':
-    print("🚀 Starting bot application...")
+    print("🚀 Starting FAST bot application...")
     asyncio.run(main())
